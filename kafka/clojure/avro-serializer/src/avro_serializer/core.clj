@@ -1,10 +1,10 @@
 (ns avro-serializer.core
   (:require [jackdaw.client :as jc]
             [clojure.pprint :as pp]
-            [jackdaw.serdes :as str-serde]
             [cheshire.core :as json]
             [clj-http.client :as http-client]
-            [jackdaw.serdes.avro.confluent :as avro-serde]))
+            [jackdaw.serdes.avro.confluent :as avro-serde])
+  (:import org.apache.kafka.common.serialization.Serdes))
 
 (defonce ^:dynamic
   *registry-url*
@@ -30,7 +30,7 @@
   (let [producer-config (merge broker-config {"acks" "all"
                                               "client.id" "foo"})
         ; specifikace zpusobu serializace klicu i obsahu zpravy
-        producer-serde-config {:key-serde   (str-serde/string-serde)
+        producer-serde-config {:key-serde   (Serdes/ByteArray)
                                :value-serde (avro-serde/serde *registry-url*
                                                               (get-schema-str *registry-schema*)
                                                               false ;; key?
@@ -46,8 +46,7 @@
       (doseq [i (range 0 messages)]
         (let [topic {:topic-name topic-name}
               ; posilany klic
-              message-key (json/generate-string {:n i
-                                                 :foo "foo"})
+              message-key (.getBytes (str "{\"id\":" i "}"))
               ; posilany obsah zpravy
               message-value {:id i
                              :name "Hello World!"}
@@ -59,5 +58,5 @@
   [& _args]
   (let [broker-config {"bootstrap.servers" "127.0.0.1:9092"}
         topic-name "test-avro"]
-    ;; poslani 100 zprav se serializaci klice i hodnoty
+    ;; poslani 10 zprav se serializaci klice i hodnoty
     (produce-messages broker-config topic-name 10)))
