@@ -10,7 +10,7 @@
 
 (defonce ^:dynamic
   *registry-url*
-  "http://intel-nuc13.cluster:8081/api/ccompat")
+  "http://192.168.125.110:8081/api/ccompat")
 
 (defonce ^:dynamic
   *registry-schema*

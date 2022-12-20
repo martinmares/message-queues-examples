@@ -60,15 +60,16 @@
                              :factorial (reduce * (range 1M (inc i)))
                              :values (range i) }
               record-metadata (jc/produce! producer topic message-key message-value)]
+          (pp/pprint message-value)
           (pp/pprint @record-metadata))))))
 
 (defn -main
   [& args]
-  (let [broker-config {"bootstrap.servers" "localhost:9092"}
-        topic-name "json"]
+  (let [broker-config {"bootstrap.servers" "127.0.0.1:9092"}
+        topic-name "test-json"]
 
     ;; na zacatku pro jistotu vymazeme tema "json"
-    (delete-topic broker-config topic-name)
+    ;; (delete-topic broker-config topic-name)
 
     ;; vytvoreni noveho tematu akceptujiciho zpravy ve formatu JSON
     (new-topic broker-config topic-name)

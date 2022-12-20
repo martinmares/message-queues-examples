@@ -12,24 +12,24 @@
 
 (ns stream-pipe-1.core
   (:require [jackdaw.admin :as ja]
-            [jackdaw.client :as jc]
-            [jackdaw.client.log :as jl]
+            ;; [jackdaw.client :as jc]
+            ;; [jackdaw.client.log :as jl]
             [jackdaw.serdes.json]
             [jackdaw.streams :as j]
-            [clojure.pprint :as pp]
+            ;; [clojure.pprint :as pp]
             [clojure.tools.logging :as log]))
 
 
 (def topic-config
   "Konfigurace témat - vstupního i výstupního."
   {:input
-   {:topic-name "input"
+   {:topic-name "test-in"
     :partition-count 1
     :replication-factor 1
     :key-serde (jackdaw.serdes.json/serde)
     :value-serde (jackdaw.serdes.json/serde)}
    :output
-   {:topic-name "output"
+   {:topic-name "test-out"
     :partition-count 1
     :replication-factor 1
     :key-serde (jackdaw.serdes.json/serde)
@@ -39,7 +39,7 @@
 (def app-config
   "Konfigurace aplikace (ve smyslu knihovny Jackdaw)."
   {"application.id" "pipe"
-   "bootstrap.servers" "localhost:9092"
+   "bootstrap.servers" "127.0.0.1:9092"
    "cache.max.bytes.buffering" "0"})
 
 
@@ -104,15 +104,15 @@
 
 (defn -main
   [& args]
-  (let [broker-config {"bootstrap.servers" "localhost:9092"}]
+  (let [broker-config {"bootstrap.servers" "127.0.0.1:9092"}]
 
     ;; na začátku pro jistotu vymažeme témata používaná pipou
-    (delete-topic broker-config (:input topic-config))
-    (delete-topic broker-config (:output topic-config))
+    ;; (delete-topic broker-config (:input topic-config))
+    ;; (delete-topic broker-config (:output topic-config))
 
     ;; vytvoření nových témat akceptujících zprávy ve formátu JSON
-    (new-topic broker-config (:input topic-config))
-    (new-topic broker-config (:output topic-config))
+    ;; (new-topic broker-config (:input topic-config))
+    ;; (new-topic broker-config (:output topic-config))
 
     ;; spuštění kolony
     (log/warn "Starting application")
