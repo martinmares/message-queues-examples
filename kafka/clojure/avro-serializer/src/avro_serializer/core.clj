@@ -1,9 +1,19 @@
 (ns avro-serializer.core
   (:require [jackdaw.client :as jc]
             [clojure.pprint :as pp]
-            [jackdaw.serdes.json :as json-serde]
+            ;; [jackdaw.serdes.json :as json-serde]
             [jackdaw.serdes :as str-serde]
-            [cheshire.core :as json]))
+            [jackdaw.serdes.avro.schema-registry :as schema-reg]
+            [cheshire.core :as json]
+            [jackdaw.serdes.avro.confluent :as avro-serde]))
+
+(defonce reg-client (schema-reg/client
+                 "http://intel-nuc13.cluster:8081/api/ccompat"
+                 1))
+
+;; (println (. reg-client getSchemaById 49))
+;; 
+;; (System/exit 0)
 
 (defn produce-messages
   [broker-config topic-name messages]
@@ -12,7 +22,11 @@
                                               "client.id" "foo"})
         ; specifikace zpusobu serializace klicu i obsahu zpravy
         producer-serde-config {:key-serde   (str-serde/string-serde)
-                               :value-serde (json-serde/serde)}]
+                               :value-serde (avro-serde/serde "http://intel-nuc13.cluster:8081/api/ccompat"
+                                                              (str (. reg-client getSchemaById 49))
+                                                              false
+                                                              {:deserializer-properties 
+                                                               {"specific.avro.reader" true}})}]
 
     ;; poslani 100 zprav se serializaci klice i hodnoty
     (with-open [producer (jc/producer producer-config producer-serde-config)]
@@ -22,11 +36,8 @@
               message-key (json/generate-string {:n i
                                                  :foo "foo"})
               ; posilany obsah zpravy
-              message-value {:bar "bar"
-                             :value i
-                             :recip (/ 1 (inc i))
-                             :factorial (reduce * (range 1M (inc i)))
-                             :values (range i)}
+              message-value {:id 1
+                             :name "Hello World!"}
               record-metadata (jc/produce! producer topic message-key message-value)]
           (pp/pprint message-value)
           (pp/pprint @record-metadata))))))
