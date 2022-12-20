@@ -3,16 +3,32 @@
             [clojure.pprint :as pp]
             ;; [jackdaw.serdes.json :as json-serde]
             [jackdaw.serdes :as str-serde]
-            [jackdaw.serdes.avro.schema-registry :as schema-reg]
+            ;; [jackdaw.serdes.avro.schema-registry :as schema-reg]
             [cheshire.core :as json]
+            [clj-http.client :as http-client]
             [jackdaw.serdes.avro.confluent :as avro-serde]))
 
-(defonce reg-client (schema-reg/client
-                 "http://intel-nuc13.cluster:8081/api/ccompat"
-                 1))
+(defonce ^:dynamic
+  *registry-url*
+  "http://intel-nuc13.cluster:8081/api/ccompat")
 
-;; (println (. reg-client getSchemaById 49))
-;; 
+(defonce ^:dynamic
+  *registry-schema*
+  "test-avro-cz.datalite.zis.cdc.avro.Sample")
+
+(defn get-schema-str
+  ([subject] 
+   (get-schema-str subject "latest"))
+  ([subject version]
+   (let [resp (http-client/get   
+               (str *registry-url* "/subjects/" subject "/versions/" version)) 
+         body (:body resp) 
+         json (json/parse-string body true)] 
+     ;; (println (:id json)) 
+     ;; (println (:schema json))
+     (str (:schema json))
+     )))
+
 ;; (System/exit 0)
 
 (defn produce-messages
@@ -22,10 +38,13 @@
                                               "client.id" "foo"})
         ; specifikace zpusobu serializace klicu i obsahu zpravy
         producer-serde-config {:key-serde   (str-serde/string-serde)
-                               :value-serde (avro-serde/serde "http://intel-nuc13.cluster:8081/api/ccompat"
-                                                              (str (. reg-client getSchemaById 49))
-                                                              false
-                                                              {:deserializer-properties 
+                               :value-serde (avro-serde/serde *registry-url*
+                                                              (get-schema-str *registry-schema*)
+                                                              false ;; key?
+                                                              {:serializer-properties
+                                                               {"value.subject.name.strategy" "io.confluent.kafka.serializers.subject.TopicRecordNameStrategy"}
+                                                               ;; {"io.confluent.kafka.serializers.subject" "TopicRecordNameStrategy"}
+                                                               :deserializer-properties 
                                                                {"specific.avro.reader" true}})}]
 
     ;; poslani 100 zprav se serializaci klice i hodnoty
@@ -36,7 +55,7 @@
               message-key (json/generate-string {:n i
                                                  :foo "foo"})
               ; posilany obsah zpravy
-              message-value {:id 1
+              message-value {:id i
                              :name "Hello World!"}
               record-metadata (jc/produce! producer topic message-key message-value)]
           (pp/pprint message-value)

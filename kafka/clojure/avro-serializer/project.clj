@@ -6,6 +6,7 @@
   :dependencies [[org.clojure/clojure "1.11.1"]
                  [fundingcircle/jackdaw "0.9.8"]
                  [cheshire "5.11.0"]
+                 [clj-http "2.3.0"]
                  [org.apache.kafka/kafka-streams-test-utils "3.3.1"]]
   :main ^:skip-aot avro-serializer.core
   :target-path "target/%s"
