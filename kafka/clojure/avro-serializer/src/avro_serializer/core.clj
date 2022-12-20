@@ -1,9 +1,7 @@
 (ns avro-serializer.core
   (:require [jackdaw.client :as jc]
             [clojure.pprint :as pp]
-            ;; [jackdaw.serdes.json :as json-serde]
             [jackdaw.serdes :as str-serde]
-            ;; [jackdaw.serdes.avro.schema-registry :as schema-reg]
             [cheshire.core :as json]
             [clj-http.client :as http-client]
             [jackdaw.serdes.avro.confluent :as avro-serde]))
@@ -24,12 +22,7 @@
                (str *registry-url* "/subjects/" subject "/versions/" version)) 
          body (:body resp) 
          json (json/parse-string body true)] 
-     ;; (println (:id json)) 
-     ;; (println (:schema json))
-     (str (:schema json))
-     )))
-
-;; (System/exit 0)
+     (str (:schema json)))))
 
 (defn produce-messages
   [broker-config topic-name messages]
@@ -42,10 +35,11 @@
                                                               (get-schema-str *registry-schema*)
                                                               false ;; key?
                                                               {:serializer-properties
-                                                               {"value.subject.name.strategy" "io.confluent.kafka.serializers.subject.TopicRecordNameStrategy"}
-                                                               ;; {"io.confluent.kafka.serializers.subject" "TopicRecordNameStrategy"}
+                                                               {"value.subject.name.strategy"
+                                                                "io.confluent.kafka.serializers.subject.TopicRecordNameStrategy"}
                                                                :deserializer-properties 
-                                                               {"specific.avro.reader" true}})}]
+                                                               {"specific.avro.reader"
+                                                                true}})}]
 
     ;; poslani 100 zprav se serializaci klice i hodnoty
     (with-open [producer (jc/producer producer-config producer-serde-config)]
